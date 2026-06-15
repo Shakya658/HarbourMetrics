@@ -1,7 +1,7 @@
 # HarbourMetrics: SaaS Revenue & Retention Analytics System
 
 ## 🚀 Project Overview & Progress
-This repository houses the full end-to-end development of the **HarbourMetrics** business intelligence platform. The project spans database architecture, predictive data modeling, and executive-level analytics reporting.
+This repository houses the full end-to-end development of the **HarbourMetrics** business intelligence platform. The project spans relational database architecture, analytical data simulation, complex KPI engineering, and executive-level analytics reporting.
 
 *   [x] **Module 1:** Database Architecture & Relational DDL Setup
 *   [x] **Module 2:** Data Simulation Engine (2,000 Customers, 24-Month History)
@@ -14,16 +14,49 @@ This repository houses the full end-to-end development of the **HarbourMetrics**
 ## 📊 Dashboard Preview
 ![SaaS Executive Dashboard](./assets/Dashboard.png)
 
-## 🛠️ Key Technical Implementations (Power BI & UX Layer)
-* **Data-Driven Storytelling:** Embedded an Executive Insights panel directly onto the canvas to present clear, scannable takeaways alongside raw visualizations.
-* **Chronological Sorting Logic:** Resolved standard chronological layout issues by leveraging hidden numerical priority keys (`month_number`) to align textual calendar timelines dynamically.
-* **Premium UX Grid:** Customized canvas borders, container cards with subtle drop shadows (`#FFFFFF` tiles over `#F4F6F9` canvas), and adjusted typography colors (`#1A2530` / `#5A6A7A`) to achieve a high-end, minimalist corporate aesthetic.
+---
 
-## 💡 Core Business Insights Delivered
-* **Enterprise Dominance:** The Enterprise tier acts as the primary revenue engine for the business, significantly outpacing basic and pro tiers despite maintaining a lower overall subscriber footprint.
-* **Retention Alert:** The organization experienced a major Net MRR contraction in February, marking a vital churn area for predictive analysis.
-* **Q4 Recovery:** The fiscal year closed out incredibly strong, culminating in a massive December revenue spike that successfully matched our annual performance peaks.
+## 📐 Database Architecture (ERD)
+The following Entity Relationship Diagram illustrates the relational Star Schema structure optimized for analytical processing (OLAP). It maps operational events, customer tiers, and historical timelines back to core plan dimensions.
 
-## 🧰 Tech Stack
-* **Database Engine:** SQL Server / Relational SQL DDL
-* **Analytics Layer:** Power BI Desktop (Data Modeling, DAX Measures, UX Design)
+```mermaid
+erDiagram
+    harbourmetrics_plans {
+        int plan_id PK
+        varchar plan_name
+        decimal base_price
+        varchar billing_cycle
+        varchar feature_tier
+    }
+    harbourmetrics_customers {
+        varchar customer_id PK
+        varchar company_name
+        varchar company_size
+        varchar industry
+        varchar region
+        date signup_date
+        date churn_date
+    }
+    harbourmetrics_custom_events {
+        varchar event_id PK
+        varchar customer_id FK
+        int plan_id FK
+        date event_date
+        varchar event_type
+    }
+    calendar {
+        date date_id PK
+        int calendar_year
+        int calendar_quarter
+        int calendar_month
+        varchar month_short_name
+        varchar day_name
+        int day_of_week
+        boolean is_weekend
+        int week_of_year
+    }
+
+    harbourmetrics_customers }|--|| calendar : "signup_date / churn_date"
+    harbourmetrics_custom_events }|--|| harbourmetrics_customers : "tracks"
+    harbourmetrics_custom_events }|--|| harbourmetrics_plans : "subscribes_to"
+    harbourmetrics_custom_events }|--|| calendar : "event_date"
