@@ -1,3 +1,4 @@
+```markdown
 # HarbourMetrics: SaaS Revenue & Retention Analytics System
 
 ## 🚀 Project Overview & Progress
@@ -60,11 +61,16 @@ erDiagram
     harbourmetrics_custom_events }|--|| harbourmetrics_customers : "tracks"
     harbourmetrics_custom_events }|--|| harbourmetrics_plans : "subscribes"
     harbourmetrics_custom_events }|--|| calendar : "event_date"
+```
 
-    💻 Technical Code Showcase
-1. SQL Optimization: Monthly Recurring Revenue (MRR) Calculation
+---
+
+## 💻 Technical Code Showcase
+
+### 1. SQL Optimization: Monthly Recurring Revenue (MRR) Calculation
 This optimized PostgreSQL query aggregates operational subscriber signups, cancellations, and tier upgrades to calculate chronological monthly revenue performance.
 
+```sql
 WITH MonthlyEvents AS (
     SELECT 
         DATE_TRUNC('month', event_date) AS reporting_month,
@@ -87,9 +93,10 @@ SELECT
 FROM MonthlyEvents me
 JOIN harbourmetrics_plans p ON me.plan_id = p.plan_id
 ORDER BY me.reporting_month ASC, Cumulative_Total_MRR DESC;
+```
 
-2. DAX Formulation: Dynamic Active Subscribers
-
+### 2. DAX Formulation: Dynamic Active Subscribers
+```dax
 Active Subscribers = 
 CALCULATE(
     COUNT(harbourmetrics_customers[customer_id]),
@@ -99,31 +106,31 @@ CALCULATE(
         (ISBLANK(harbourmetrics_customers[churn_date]) || harbourmetrics_customers[churn_date] > MAX('calendar'[date_id]))
     )
 )
+```
 
-🛠️ Key Technical Implementations (Power BI & UX Layer)
-Data-Driven Storytelling: Embedded an Executive Insights panel directly onto the canvas to present clear, scannable takeaways alongside raw visualizations.
+---
 
-Chronological Sorting Logic: Resolved standard chronological layout issues by leveraging hidden numerical priority keys (month_number) to align textual calendar timelines dynamically.
+## 🛠️ Key Technical Implementations (Power BI & UX Layer)
+* **Data-Driven Storytelling:** Embedded an Executive Insights panel directly onto the canvas to present clear, scannable takeaways alongside raw visualizations.
+* **Chronological Sorting Logic:** Resolved standard chronological layout issues by leveraging hidden numerical priority keys (`month_number`) to align textual calendar timelines dynamically.
+* **Premium UX Grid:** Customized canvas borders, container cards with subtle drop shadows (`#FFFFFF` tiles over `#F4F6F9` canvas), and adjusted typography colors (`#1A2530` / `#5A6A7A`) to achieve a high-end, minimalist corporate aesthetic.
 
-Premium UX Grid: Customized canvas borders, container cards with subtle drop shadows (#FFFFFF tiles over #F4F6F9 canvas), and adjusted typography colors (#1A2530 / #5A6A7A) to achieve a high-end, minimalist corporate aesthetic.
+## 💡 Core Business Insights Delivered
+* **Enterprise Dominance:** The Enterprise tier acts as the primary revenue engine for the business, significantly outpacing basic and pro tiers despite maintaining a lower overall subscriber footprint.
+* **Retention Alert:** The organization experienced a major Net MRR contraction in February, marking a vital churn area for predictive analysis.
+* **Q4 Recovery:** The fiscal year closed out incredibly strong, culminating in a massive December revenue spike that successfully matched our annual performance peaks.
 
-💡 Core Business Insights Delivered
-Enterprise Dominance: The Enterprise tier acts as the primary revenue engine for the business, significantly outpacing basic and pro tiers despite maintaining a lower overall subscriber footprint.
+---
 
-Retention Alert: The organization experienced a major Net MRR contraction in February, marking a vital churn area for predictive analysis.
+## ⚙️ How to Run & Local Setup
 
-Q4 Recovery: The fiscal year closed out incredibly strong, culminating in a massive December revenue spike that successfully matched our annual performance peaks.
+### Prerequisites
+* **Database:** PostgreSQL (v14 or higher)
+* **BI Software:** Power BI Desktop
 
-⚙️ How to Run & Local Setup
-Prerequisites
-Database: PostgreSQL (v14 or higher)
-
-BI Software: Power BI Desktop
-
-Step 1: Database Initialization
+### Step 1: Database Initialization
 Clone this repository and execute your schema initialization query script inside your database manager client to construct the structural layout and load the simulated datasets.
 
-git clone [https://github.com/Shakya658/HarbourMetrics.git](https://github.com/Shakya658/HarbourMetrics.git)
+```bash
+git clone https://github.com/Shakya658/HarbourMetrics.git
 cd HarbourMetrics
-
-Step 2: Open Report & Refresh Data LinkOpen the file HarbourMetrics_SaaS_Analytics.pbix in Power BI Desktop.In the top ribbon, click Transform Data $\rightarrow$ Data source settings.Select the local PostgreSQL entry, click Change Source, and enter your local server credentials to re-link your relational database tables.Click Refresh to populate the charts dynamically.🧰 Tech StackDatabase Engine: PostgreSQL (Relational Architecture & Window Functions)Analytics Layer: Power BI Desktop (Power Query Engine, Data Modeling, DAX, UX Layout)
