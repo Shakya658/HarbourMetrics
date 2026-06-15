@@ -19,7 +19,6 @@ This repository houses the full end-to-end development of the HarbourMetrics bus
 📐 Database Architecture (ERD)
 
 The following Entity Relationship Diagram illustrates the relational Star Schema structure optimized for analytical processing (OLAP). It maps operational events, customer tiers, and historical timelines back to core plan dimensions.
-
 erDiagram
     harbourmetrics_plans {
         int plan_id PK
@@ -60,14 +59,11 @@ erDiagram
     harbourmetrics_custom_events }|--|| harbourmetrics_customers : "tracks"
     harbourmetrics_custom_events }|--|| harbourmetrics_plans : "subscribes"
     harbourmetrics_custom_events }|--|| calendar : "event_date"
-
-
 💻 Technical Code Showcase
 
 1. SQL Optimization: Monthly Recurring Revenue (MRR) Calculation
 
 This optimized PostgreSQL query aggregates operational subscriber signups, cancellations, and tier upgrades to calculate chronological monthly revenue performance.
-
 WITH MonthlyEvents AS (
     SELECT 
         DATE_TRUNC('month', event_date) AS reporting_month,
@@ -91,9 +87,7 @@ FROM MonthlyEvents me
 JOIN harbourmetrics_plans p ON me.plan_id = p.plan_id
 ORDER BY me.reporting_month ASC, Cumulative_Total_MRR DESC;
 
-
 2. DAX Formulation: Dynamic Active Subscribers
-
 Active Subscribers = 
 CALCULATE(
     COUNT(harbourmetrics_customers[customer_id]),
@@ -103,7 +97,6 @@ CALCULATE(
         (ISBLANK(harbourmetrics_customers[churn_date]) || harbourmetrics_customers[churn_date] > MAX('calendar'[date_id]))
     )
 )
-
 
 🛠️ Key Technical Implementations (Power BI & UX Layer)
 
@@ -152,5 +145,3 @@ Click Refresh to populate the charts dynamically.
 Database Engine: PostgreSQL (Relational Architecture & Window Functions)
 
 Analytics Layer: Power BI Desktop (Power Query Engine, Data Modeling, DAX, UX Layout)
-
-eof
