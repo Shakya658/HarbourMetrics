@@ -16,6 +16,10 @@ This repository houses the full end-to-end development of the HarbourMetrics bus
 
 📊 Dashboard Preview
 
+<p align="center">
+  <img src="assets/Dashboard.png" alt="Dashboard" width="800">
+</p>
+
 💻 Technical Code Showcase
 
 1. SQL Optimization: Monthly Recurring Revenue (MRR) Calculation
