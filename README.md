@@ -1,108 +1,234 @@
-HarbourMetrics: SaaS Revenue & Retention Analytics System
+# HarbourMetrics: SaaS Revenue & Retention Analytics
 
-🚀 Project Overview & Progress
+An end-to-end business intelligence project that simulates a B2B SaaS subscription business, models its customer lifecycle in PostgreSQL, calculates revenue and retention KPIs, and presents the results in an executive Power BI dashboard.
 
-This repository houses the full end-to-end development of the HarbourMetrics business intelligence platform. The project spans relational database architecture, analytical data simulation, complex KPI engineering, and executive-level analytics reporting.
+## Project Overview
 
-[x] Module 1: Database Architecture & Relational DDL Setup
+HarbourMetrics demonstrates a complete analytics workflow across:
 
-[x] Module 2: Data Simulation Engine (2,000 Customers, 24-Month History)
+- Relational database design
+- Synthetic data generation
+- Subscription-event modelling
+- MRR, ARR, churn and cohort analysis
+- Power BI semantic modelling
+- DAX measures and executive storytelling
 
-[x] Module 3: Analytical SQL KPI Development (MRR, Churn, Cohorts)
+### Completed modules
 
-[x] Module 4: Power BI Semantic Modeling & DAX Formulation
+- [x] Database architecture and relational DDL
+- [x] Data simulation for 2,000 customers across a 24-month business scenario
+- [x] Analytical SQL for revenue, churn, upgrades and cohorts
+- [x] Power BI data model and DAX measures
+- [x] Executive dashboard design
 
-[x] Module 5: Dashboard Design & Executive Storytelling
+## Dashboard Preview
 
-📊 Dashboard Preview
+<p align="center">
+  <img src="assets/Dashboard.png" alt="HarbourMetrics executive Power BI dashboard" width="800">
+</p>
 
-💻 Technical Code Showcase
+## Business Questions
 
-1. SQL Optimization: Monthly Recurring Revenue (MRR) Calculation
+- How are MRR and ARR changing over time?
+- Which subscription plans generate the most recurring revenue?
+- Where are churn and contraction affecting performance?
+- Which acquisition channels produce the strongest customer value?
+- How do upgrades and downgrades affect Net MRR?
+- How does customer retention change across signup cohorts?
 
-This optimized PostgreSQL query aggregates operational subscriber signups, cancellations, and tier upgrades to calculate chronological monthly revenue performance.
+## Data Model
 
-WITH MonthlyEvents AS (
-    SELECT 
-        DATE_TRUNC('month', event_date) AS reporting_month,
-        plan_id,
-        COUNT(CASE WHEN event_type = 'signup' THEN 1 END) AS new_signups,
-        COUNT(CASE WHEN event_type = 'churn' THEN 1 END) AS cancellations
-    FROM harbourmetrics_custom_events
-    GROUP BY 1, 2
+The PostgreSQL model contains:
+
+- `harbourmetrics.customers` — customer and firmographic attributes
+- `harbourmetrics.plans` — subscription tiers and pricing
+- `harbourmetrics.subscriptions` — current contract state
+- `harbourmetrics.subscription_events` — signup, upgrade, downgrade, churn and reactivation events
+- `harbourmetrics.calendar_dim` — continuous date dimension for time intelligence
+
+## Repository Structure
+
+```text
+HarbourMetrics/
+├── 01_sql_setup/
+│   ├── 01_schema.sql
+│   ├── 02_tables_customers.sql
+│   ├── 03_tables_plans.sql
+│   ├── 04_tables_subscriptions.sql
+│   ├── 05_tables_events.sql
+│   └── 06_calendar_dim.sql
+├── 02_data_generation/
+│   ├── 01_seed_customers.sql
+│   ├── 02_seed_plans.sql
+│   ├── 03_seed_subscriptions.sql
+│   └── 04_generate_events.sql
+├── 03_kpi_queries/
+│   ├── 01_mrr.sql
+│   ├── 02_arr.sql
+│   ├── 03_churn_rate.sql
+│   ├── 04_revenue_by_plan.sql
+│   ├── 05_upgrade_downgrade.sql
+│   ├── 06_customer_segmentation.sql
+│   └── 07_cohort_analysis.sql
+├── 04_power_bi/
+│   └── HarbourMetrics_SaaS_Analytics.pbix
+├── assets/
+│   └── Dashboard.png
+├── .gitignore
+└── README.md
+```
+
+## SQL Example: Monthly Revenue Events
+
+This example summarises monthly signups and churn events by subscription plan using the actual PostgreSQL schema and table names in this repository.
+
+```sql
+WITH monthly_events AS (
+    SELECT
+        DATE_TRUNC('month', se.event_date)::DATE AS reporting_month,
+        COALESCE(se.new_plan_id, se.old_plan_id) AS plan_id,
+        COUNT(*) FILTER (WHERE se.event_type = 'signup') AS new_signups,
+        COUNT(*) FILTER (WHERE se.event_type = 'churn') AS cancellations
+    FROM harbourmetrics.subscription_events AS se
+    GROUP BY
+        DATE_TRUNC('month', se.event_date)::DATE,
+        COALESCE(se.new_plan_id, se.old_plan_id)
 )
-SELECT 
+SELECT
     me.reporting_month,
     p.plan_name,
     p.base_price,
-    (me.new_signups * p.base_price) AS Gross_New_MRR,
-    (me.cancellations * p.base_price) AS Churned_MRR,
-    SUM(me.new_signups - me.cancellations) OVER (
-        PARTITION BY p.plan_id 
-        ORDER BY me.reporting_month
-    ) * p.base_price AS Cumulative_Total_MRR
-FROM MonthlyEvents me
-JOIN harbourmetrics_plans p ON me.plan_id = p.plan_id
-ORDER BY me.reporting_month ASC, Cumulative_Total_MRR DESC;
+    me.new_signups * p.base_price AS gross_new_mrr,
+    me.cancellations * p.base_price AS churned_mrr
+FROM monthly_events AS me
+JOIN harbourmetrics.plans AS p
+    ON me.plan_id = p.plan_id
+ORDER BY me.reporting_month, p.plan_name;
+```
 
+The complete KPI logic is stored in `03_kpi_queries/`.
 
-2. DAX Formulation: Dynamic Active Subscribers
+## DAX Example: Active Subscribers
 
-Active Subscribers = 
+After importing the PostgreSQL tables into Power BI, the active-subscriber measure can be expressed as:
+
+```DAX
+Active Subscribers =
+VAR ReportingDate = MAX(calendar_dim[date_id])
+RETURN
 CALCULATE(
-    COUNT(harbourmetrics_customers[customer_id]),
+    DISTINCTCOUNT(subscriptions[customer_id]),
     FILTER(
-        harbourmetrics_customers,
-        harbourmetrics_customers[signup_date] <= MAX('calendar'[date_id]) &&
-        (ISBLANK(harbourmetrics_customers[churn_date]) || harbourmetrics_customers[churn_date] > MAX('calendar'[date_id]))
+        subscriptions,
+        subscriptions[start_date] <= ReportingDate
+            && (
+                ISBLANK(subscriptions[end_date])
+                || subscriptions[end_date] > ReportingDate
+            )
     )
 )
+```
 
+Power BI may apply different display names during import. The measure should reference the imported `subscriptions` and `calendar_dim` tables.
 
-🛠️ Key Technical Implementations (Power BI & UX Layer)
+## Key Insights
 
-Data-Driven Storytelling: Embedded an Executive Insights panel directly onto the canvas to present clear, scannable takeaways alongside raw visualizations.
+- The Enterprise plan is the largest recurring-revenue contributor despite serving fewer customers than lower-priced tiers.
+- February shows a material Net MRR contraction and should be investigated for churn and downgrade drivers.
+- Revenue recovers strongly during the final quarter, with December returning to an annual performance peak.
 
-Chronological Sorting Logic: Resolved standard chronological layout issues by leveraging hidden numerical priority keys (month_number) to align textual calendar timelines dynamically.
+Because the project uses simulated data, these findings demonstrate analytical interpretation rather than describe a real company.
 
-Premium UX Grid: Customized canvas borders, container cards with subtle drop shadows (#FFFFFF tiles over #F4F6F9 canvas), and adjusted typography colors (#1A2530 / #5A6A7A) to achieve a high-end, minimalist corporate aesthetic.
+## How to Run the Project
 
-💡 Core Business Insights Delivered
+### Prerequisites
 
-Enterprise Dominance: The Enterprise tier acts as the primary revenue engine for the business, significantly outpacing basic and pro tiers despite maintaining a lower overall subscriber footprint.
+- PostgreSQL 14 or later
+- A PostgreSQL client such as DBeaver or pgAdmin
+- Power BI Desktop
+- Git
 
-Retention Alert: The organization experienced a major Net MRR contraction in February, marking a vital churn area for predictive analysis.
+### 1. Clone the repository
 
-Q4 Recovery: The fiscal year closed out incredibly strong, culminating in a massive December revenue spike that successfully matched our annual performance peaks.
-
-⚙️ How to Run & Local Setup
-
-Prerequisites
-
-Database: PostgreSQL (v14 or higher)
-
-BI Software: Power BI Desktop
-
-Step 1: Database Initialization
-
-Clone this repository and execute your schema initialization query script inside your database manager client to construct the structural layout and load the simulated datasets.
-
-git clone [https://github.com/Shakya658/HarbourMetrics.git](https://github.com/Shakya658/HarbourMetrics.git)
+```bash
+git clone https://github.com/Shakya658/HarbourMetrics.git
 cd HarbourMetrics
+```
 
+### 2. Create the schema and tables
 
-Step 2: Open Report & Refresh Data Link
+Run the files below in order:
 
-Open the file HarbourMetrics_SaaS_Analytics.pbix in Power BI Desktop.
+```text
+01_sql_setup/01_schema.sql
+01_sql_setup/02_tables_customers.sql
+01_sql_setup/03_tables_plans.sql
+01_sql_setup/04_tables_subscriptions.sql
+01_sql_setup/05_tables_events.sql
+01_sql_setup/06_calendar_dim.sql
+```
 
-In the top ribbon, click Transform Data $\rightarrow$ Data source settings.
+### 3. Generate the simulated data
 
-Select the local PostgreSQL entry, click Change Source, and enter your local server credentials to re-link your relational database tables.
+Run:
 
-Click Refresh to populate the charts dynamically.
+```text
+02_data_generation/01_seed_customers.sql
+02_data_generation/02_seed_plans.sql
+02_data_generation/03_seed_subscriptions.sql
+02_data_generation/04_generate_events.sql
+```
 
-🧰 Tech Stack
+### 4. Run the KPI queries
 
-Database Engine: PostgreSQL (Relational Architecture & Window Functions)
+Execute the scripts in `03_kpi_queries/` in numerical order.
 
-Analytics Layer: Power BI Desktop (Power Query Engine, Data Modeling, DAX, UX Layout)
+```text
+03_kpi_queries/01_mrr.sql
+03_kpi_queries/02_arr.sql
+03_kpi_queries/03_churn_rate.sql
+03_kpi_queries/04_revenue_by_plan.sql
+03_kpi_queries/05_upgrade_downgrade.sql
+03_kpi_queries/06_customer_segmentation.sql
+03_kpi_queries/07_cohort_analysis.sql
+```
+
+### 5. Open the Power BI report
+
+Open:
+
+```text
+04_power_bi/HarbourMetrics_SaaS_Analytics.pbix
+```
+
+In Power BI Desktop:
+
+1. Select **Transform data**.
+2. Open **Data source settings**.
+3. Replace the existing PostgreSQL connection with your local server and database details.
+4. Apply the changes and refresh the report.
+
+## Simulation and Reproducibility
+
+The project intentionally uses PostgreSQL `RANDOM()` to generate synthetic customers and lifecycle events. Running the data-generation scripts again may produce different row distributions, churn events and dashboard values.
+
+The percentages embedded in the generation logic represent business assumptions for the portfolio scenario, not observed behaviour from a real SaaS company. The current dashboard screenshot reflects one completed simulation run.
+
+## Tech Stack
+
+- PostgreSQL
+- SQL
+- Power BI Desktop
+- Power Query
+- DAX
+- DBeaver
+- Git and GitHub
+
+## Author
+
+**Shirish Man Shakya**  
+Data Analyst | Business Intelligence | Predictive Analytics
+
+- [Portfolio](https://shakya658.github.io/portfolio/)
+- [LinkedIn](https://linkedin.com/in/shirish-man-shakya)
+- [GitHub](https://github.com/Shakya658)
